@@ -1,75 +1,84 @@
-ï»¿# Bolt Chat Proxy Design (OpenAI-Compatible)
+# Bolt Chat Proxy (OpenAI-Compatible) Design
 
 Date: 2026-03-13
 
 ## Summary
-Build a local FastAPI adapter that exposes OpenAI-compatible `chat/completions` on `127.0.0.1:8217` and maps requests to `https://bolt.new/api/chat/v2`, including SSE streaming. Provide a `GET /v1/models` endpoint for client discovery. Enforce an allowlist of supported models. Use minimal upstream auth only if required.
+Build a local Python 3.12 proxy that exposes OpenAI-compatible `/v1/chat/completions` (plus `/v1/models`) and translates requests to Bolt's `/api/chat/v2`. Streaming SSE is supported. Local auth defaults to `sk-op` and is configurable. Upstream auth uses minimal required fields only when necessary.
 
 ## Goals
-- Provide OpenAI-compatible `POST /v1/chat/completions` for local clients.
-- Support `stream: true` (SSE) and non-streaming responses.
-- Support tools/function_call.
-- Enforce a strict model allowlist.
-- Support optional local API key validation.
-- Keep upstream auth minimal and user-supplied only if required.
+- Provide OpenAI-compatible chat endpoint at `127.0.0.1:8217`.
+- Support streaming (`stream: true`) and non-streaming responses.
+- Enforce model allowlist matching Bolt-supported models.
+- Minimize required auth fields; prompt only if upstream requires.
+- Work with `uv` on Python 3.12.
 
 ## Non-Goals
-- Changing upstream authentication or credentials.
-- Guaranteeing backend permissions beyond what the upstream account allows.
-- Implementing a full `/v1/responses` API.
+- Bypass upstream authorization or billing.
+- Emulate OpenAI function/tool behavior beyond schema mapping.
+- Persist auth secrets in code.
 
-## Architecture (Design A)
-- Service: FastAPI
-- Port: `127.0.0.1:8217`
-- Endpoints:
+## Architecture
+- **Service**: FastAPI
+- **HTTP client**: httpx (supports streaming)
+- **Endpoints**:
   - `POST /v1/chat/completions`
   - `GET /v1/models`
-- Upstream: `https://bolt.new/api/chat/v2`
-- HTTP client: `httpx`
-- Python: 3.12 via `uv`
+- **Upstream**: `https://bolt.new/api/chat/v2`
 
-## Authentication (Design B)
-### Local OpenAI Auth
-- Accept `Authorization: Bearer sk-op` by default.
-- Override via env `LOCAL_OPENAI_API_KEY`.
-- If env is empty, skip local auth checks.
-
-### Upstream Auth (Minimal)
-- Only request and send the minimal required cookie/header if upstream demands it.
-- No credentials are stored in code; provided via env or runtime configuration.
-
-## Model Handling (Design C)
-Allowlist only:
+## Model Handling
+Allowed models:
 - `claude-haiku-4-5-20251001`
 - `claude-sonnet-4-5-20250929`
 - `claude-opus-4-5-20251101`
 - `claude-opus-4-6`
 - `claude-sonnet-4-6`
 
-Unknown models return HTTP 400 with an OpenAI-style error payload.
+Behavior:
+- If `model` not in allowlist: return `400` with OpenAI-style error.
 
-## Request/Response Mapping (Design D)
-- Input: OpenAI `chat.completions` request schema.
-- Translate into `/api/chat/v2` request schema (captured via jsr-reverse).
-- Output:
-  - If `stream: true`, return SSE in OpenAI chunk format.
-  - Else, return standard `chat.completion` JSON.
-- Tools/function_call are passed through and mapped to upstream equivalents.
+## Authentication
+### Local OpenAI-compatible auth
+- Default accepted key: `sk-op`.
+- Override via env: `LOCAL_OPENAI_API_KEY`.
+- If env is empty/unset, skip local auth.
 
-## Error Handling (Design E)
-- Upstream 401/403 -> OpenAI error payload, status passthrough.
-- Schema mismatch / unexpected payload -> HTTP 502 with minimal diagnostic hint.
-- Network errors -> HTTP 502.
+### Upstream auth
+- Only include minimal required fields (cookie or bearer).
+- If upstream returns 401/403, respond with OpenAI error shape and prompt user to supply the minimal required auth field(s).
+
+## Request/Response Mapping
+- Input: OpenAI `chat.completions` request.
+- Output: OpenAI `chat.completions` response.
+- The adapter translates to Bolt `/api/chat/v2` schema based on captured live request/response.
+- Tools/functions are mapped to Bolt schema when present.
+
+## Streaming
+- If `stream: true`, proxy transforms upstream stream to OpenAI SSE:
+  - `data: {"id":...,"object":"chat.completion.chunk",...}`
+  - `data: [DONE]`
+- If upstream is non-SSE, convert to SSE chunks in the adapter.
+
+## Error Handling
+- Upstream 401/403 ¡ú OpenAI error JSON with `type`, `code`.
+- Upstream schema mismatch ¡ú 502 with concise hint.
+- Validation errors (missing model, malformed messages) ¡ú 400.
 
 ## Configuration
 - `LOCAL_OPENAI_API_KEY` (optional)
-- `UPSTREAM_AUTH_*` (placeholder names; to be finalized after locate phase)
+- `UPSTREAM_COOKIE` (optional)
+- `UPSTREAM_BEARER` (optional)
+- `BOLT_BASE_URL` default `https://bolt.new`
+
+## Logging
+- Request ID per incoming request.
+- Log upstream status, elapsed time, and conversion failures.
+- Do not log raw credentials.
 
 ## Testing
-- Manual curl test for non-streaming.
-- Manual SSE test for streaming.
-- Model allowlist rejection test.
-- Auth required/optional checks.
+- Smoke test:
+  - `GET /v1/models` returns allowlist.
+  - `POST /v1/chat/completions` returns completion for a trivial prompt.
+  - Streaming request returns SSE chunks and `[DONE]`.
 
-## Next Step
-Create an implementation plan and then implement the adapter.
+## Open Questions
+- Exact `/api/chat/v2` request/response schema and streaming format (to be captured via jsr-reverse before implementation).
