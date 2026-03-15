@@ -49,6 +49,13 @@ If any verification appears, complete it manually.
 }
 ```
 
+Example `.env`:
+```bash
+BOLT_PROXY_KEY=your_proxy_key_here
+E2E_EMAIL=you@example.com
+E2E_PASSWORD=your_password_here
+```
+
 ## Run the proxy
 ```bash
 uv run bolt_openai_proxy.py
