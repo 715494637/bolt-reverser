@@ -33,25 +33,6 @@ uv run e2e_register_stackblitz_pydoll.py
 
 If any verification appears, complete it manually.
 
-`bolt_accounts.json` will be created/updated automatically. Format example (for reference only):
-
-```json
-{
-  "rotation": "round_robin",
-  "accounts": [
-    {
-      "name": "account-1",
-      "email": "you@example.com",
-      "password": "YOUR_PASSWORD",
-      "cookie": "__session=YOUR_SESSION_COOKIE",
-      "project_id": "",
-      "default_model": "claude-sonnet-4-6",
-      "max_concurrency": 1
-    }
-  ]
-}
-```
-
 ## Run the proxy
 ```bash
 uv run bolt_openai_proxy.py
