@@ -19,8 +19,9 @@ Tooling for experimenting with Bolt/StackBlitz chat flows and a local OpenAI-com
 
 ## Setup
 1. Create `.env` (ignored by git) and set optional proxy auth.
-   - `BOLT_PROXY_KEY` Optional. If set, requests must include `Authorization: Bearer <key>`.
-   - `E2E_EMAIL` / `E2E_PASSWORD` Used by the bootstrap script below.
+   - `BOLT_PROXY_KEY` Local service auth key. If set, requests must include `Authorization: Bearer <key>`.
+   - `E2E_EMAIL` Use a 2925 mailbox created at `https://2925.com/` (infinite aliases).
+   - `E2E_PASSWORD` The password for that 2925 mailbox.
    - Other tuning options are documented at the top of `bolt_openai_proxy.py`.
 2. Bootstrap accounts to auto-create `bolt_accounts.json` (ignored by git):
 
