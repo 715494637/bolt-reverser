@@ -2,11 +2,6 @@
 
 Tooling for experimenting with Bolt/StackBlitz chat flows and a local OpenAI-compatible proxy for your own accounts.
 
-## Compliance
-- Use only with accounts you own or are authorized to test.
-- Follow the target service terms and policies.
-- Do not bypass paywalls, WAF/anti-bot protections, or access controls.
-
 ## Contents
 - `bolt_openai_proxy.py` FastAPI proxy exposing `/v1/models` and `/v1/chat/completions`.
 - `refresh_bolt_sessions.py` Refreshes session state for accounts in `bolt_accounts.json`.
