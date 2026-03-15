@@ -10,8 +10,7 @@ Tooling for experimenting with Bolt/StackBlitz chat flows and a local OpenAI-com
 ## Contents
 - `bolt_openai_proxy.py` FastAPI proxy exposing `/v1/models` and `/v1/chat/completions`.
 - `refresh_bolt_sessions.py` Refreshes session state for accounts in `bolt_accounts.json`.
-- `e2e_register_stackblitz.py` Playwright-assisted registration flow with manual Turnstile.
-- `e2e_register_stackblitz_pydoll.py` pydoll-based automation variant (authorized testing only).
+- `e2e_register_stackblitz_pydoll.py` Registration/bootstrap helper that auto-creates `bolt_accounts.json` (authorized testing only).
 - `imap_2925.py` IMAP helper to extract confirmation links.
 
 ## Requirements
@@ -23,8 +22,15 @@ Tooling for experimenting with Bolt/StackBlitz chat flows and a local OpenAI-com
 1. Create `.env` (ignored by git) and set optional proxy auth.
    - `BOLT_PROXY_KEY` Optional. If set, requests must include `Authorization: Bearer <key>`.
    - Other tuning options are documented at the top of `bolt_openai_proxy.py`.
-2. Create `bolt_accounts.json` (ignored by git).
-   - Example:
+2. Bootstrap accounts to auto-create `bolt_accounts.json` (ignored by git):
+
+```bash
+uv run e2e_register_stackblitz_pydoll.py --email you@example.com --password "..."
+```
+
+If any verification appears, complete it manually.
+
+`bolt_accounts.json` will be created/updated automatically. Format example (for reference only):
 
 ```json
 {
@@ -65,16 +71,10 @@ curl http://localhost:8000/v1/chat/completions \
 uv run refresh_bolt_sessions.py --all
 ```
 
-## Registration helpers
-Playwright (manual Turnstile):
-```bash
-python e2e_register_stackblitz.py --email you@example.com --password "..." --submit
-```
-
-pydoll variant (authorized testing only):
-```bash
-uv run e2e_register_stackblitz_pydoll.py --email you@example.com --password "..."
-```
+## Quick usage
+1. Run the proxy: `uv run bolt_openai_proxy.py`
+2. Point your client base URL to `http://localhost:8000`
+3. Send OpenAI-compatible requests to `/v1/chat/completions`
 
 ## Notes on secrets
 - Do not commit real cookies, passwords, or tokens.
