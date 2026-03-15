@@ -13,6 +13,13 @@ Tooling for experimenting with Bolt/StackBlitz chat flows and a local OpenAI-com
 - Recommended: `uv` for running PEP 723 scripts
 
 ## Setup
+Example `.env`:
+```bash
+BOLT_PROXY_KEY=your_proxy_key_here
+E2E_EMAIL=you@example.com
+E2E_PASSWORD=your_password_here
+```
+
 1. Create `.env` (ignored by git) and set optional proxy auth.
    - `BOLT_PROXY_KEY` Local service auth key. If set, requests must include `Authorization: Bearer <key>`.
    - `E2E_EMAIL` Use a 2925 mailbox created at `https://2925.com/` (infinite aliases).
@@ -43,13 +50,6 @@ If any verification appears, complete it manually.
     }
   ]
 }
-```
-
-Example `.env`:
-```bash
-BOLT_PROXY_KEY=your_proxy_key_here
-E2E_EMAIL=you@example.com
-E2E_PASSWORD=your_password_here
 ```
 
 ## Run the proxy
