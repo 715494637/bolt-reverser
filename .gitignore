@@ -1,1 +1,9 @@
 .worktrees/
+.env
+.venv/
+__pycache__/
+*.pyc
+logs/
+tmp/
+reverse-records/
+bolt_accounts.json
